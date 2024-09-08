@@ -1,6 +1,7 @@
-// script.js
+// statics
 const canvas = document.getElementById('drawingCanvas');
 const ctx = canvas.getContext('2d');
+//tools
 const penColorInput = document.getElementById('penColor');
 const bgColorInput = document.getElementById('bgColor');
 const brushSizeInput = document.getElementById('brushSize');
@@ -9,6 +10,9 @@ const saveBtn = document.getElementById('saveBtn');
 const resetBtn = document.getElementById('resetBtn');
 const layerSelect = document.getElementById('layerSelect');
 const layerVisibility = document.getElementById('layerVisibility');
+const brushOpacityInput = document.getElementById('brushOpacity');
+const opacityValueSpan = document.getElementById('opacityValue');
+let brushOpacity = 1;
 
 // Set canvas size
 function resizeCanvas() {
@@ -84,8 +88,10 @@ function drawPoint(e) {
 
     if (toolType === 'eraser') {
         layer.context.globalCompositeOperation = 'destination-out';
+        layer.context.globalAlpha = 1; // Eraser should always be fully opaque
     } else {
         layer.context.globalCompositeOperation = 'source-over';
+        layer.context.globalAlpha = brushOpacity;
         layer.context.strokeStyle = penColor;
     }
 
@@ -109,8 +115,10 @@ function draw(e) {
 
     if (toolType === 'eraser') {
         layer.context.globalCompositeOperation = 'destination-out';
+        layer.context.globalAlpha = 1; // Eraser should always be fully opaque
     } else {
         layer.context.globalCompositeOperation = 'source-over';
+        layer.context.globalAlpha = brushOpacity;
         layer.context.strokeStyle = penColor;
     }
 
@@ -126,7 +134,7 @@ canvas.addEventListener('mousedown', startDrawing);
 canvas.addEventListener('mouseup', stopDrawing);
 canvas.addEventListener('mousemove', draw);
 canvas.addEventListener('mouseout', stopDrawing);
-canvas.addEventListener('click', drawPoint); // Add this line
+canvas.addEventListener('click', drawPoint); 
 
 penColorInput.addEventListener('change', (e) => {
     penColor = e.target.value;
@@ -179,3 +187,8 @@ saveBtn.addEventListener('click', () => {
 initializeLayers();
 resizeCanvas();
 window.addEventListener('resize', resizeCanvas);
+
+brushOpacityInput.addEventListener('input', (e) => {
+    brushOpacity = e.target.value / 100;
+    opacityValueSpan.textContent = `${e.target.value}%`;
+});
