@@ -6,8 +6,12 @@ const penColorInput = document.getElementById('penColor');
 const bgColorInput = document.getElementById('bgColor');
 const brushSizeInput = document.getElementById('brushSize');
 const toolTypeSelect = document.getElementById('toolType');
+
+// buttons
 const saveBtn = document.getElementById('saveBtn');
 const resetBtn = document.getElementById('resetBtn');
+
+// layers
 const layerSelect = document.getElementById('layerSelect');
 const layerVisibility = document.getElementById('layerVisibility');
 const brushOpacityInput = document.getElementById('brushOpacity');
@@ -52,7 +56,7 @@ function initializeLayers() {
     }
 }
 
-function redrawCanvas() {
+function redrawCanvas() {//perpetuates drwing 
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     setCanvasBackground(bgColor);
     layers.forEach(layer => {
@@ -90,8 +94,8 @@ function drawPoint(e) {
         layer.context.globalCompositeOperation = 'destination-out';
         layer.context.globalAlpha = 1; // Eraser should always be fully opaque
     } else {
-        layer.context.globalCompositeOperation = 'source-over';
-        layer.context.globalAlpha = brushOpacity;
+        layer.context.globalCompositeOperation = 'source-over';//comosite op refers to order of drawing path
+        layer.context.globalAlpha = brushOpacity;//global alpha refers to transparency
         layer.context.strokeStyle = penColor;
     }
 
@@ -183,12 +187,13 @@ saveBtn.addEventListener('click', () => {
     });
 });
 
+brushOpacityInput.addEventListener('input', (e) => {
+    brushOpacity = e.target.value / 100;
+    opacityValueSpan.textContent = `${e.target.value}%`;
+});
+
 // Initialize
 initializeLayers();
 resizeCanvas();
 window.addEventListener('resize', resizeCanvas);
 
-brushOpacityInput.addEventListener('input', (e) => {
-    brushOpacity = e.target.value / 100;
-    opacityValueSpan.textContent = `${e.target.value}%`;
-});
