@@ -58,4 +58,19 @@ resetBtn.addEventListener('click', () => {
     setCanvasBackground(bgColor);
 });
 
+saveBtn.addEventListener('click', () => {
+    canvas.toBlob((blob) => {
+        const formData = new FormData();
+        formData.append('file', blob, 'drawing.png');
+
+        fetch('/upload', {
+            method: 'POST',
+            body: formData,
+        }).then(response => response.text())
+            .then(text => alert(text))
+            .catch(error => console.error('Error:', error));
+    });
+});
+
+
 setCanvasBackground(bgColor);
