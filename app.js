@@ -1,49 +1,132 @@
+// script.js
 const canvas = document.getElementById('drawingCanvas');
 const ctx = canvas.getContext('2d');
 const penColorInput = document.getElementById('penColor');
 const bgColorInput = document.getElementById('bgColor');
+const brushSizeInput = document.getElementById('brushSize');
+const toolTypeSelect = document.getElementById('toolType');
+const saveBtn = document.getElementById('saveBtn');
 const resetBtn = document.getElementById('resetBtn');
-
+const layerSelect = document.getElementById('layerSelect');
+const layerVisibility = document.getElementById('layerVisibility');
 
 // Set canvas size
-canvas.width = window.innerWidth - 40;
-canvas.height = window.innerHeight - 200;
+function resizeCanvas() {
+    const container = canvas.parentElement;
+    canvas.width = container.clientWidth;
+    canvas.height = container.clientHeight;
+    layers.forEach(layer => {
+        layer.canvas.width = canvas.width;
+        layer.canvas.height = canvas.height;
+    });
+    redrawCanvas();
+}
 
 let drawing = false;
 let penColor = '#000000';
 let bgColor = '#ffffff';
+let brushSize = 5;
+let toolType = 'pen';
+const MAX_LAYERS = 6;
+let layers = [];
+let currentLayer = 0;
+
+function createLayer() {
+    const layerCanvas = document.createElement('canvas');
+    layerCanvas.width = canvas.width;
+    layerCanvas.height = canvas.height;
+    return {
+        canvas: layerCanvas,
+        context: layerCanvas.getContext('2d'),
+        visible: true
+    };
+}
+
+function initializeLayers() {
+    for (let i = 0; i < MAX_LAYERS; i++) {
+        layers.push(createLayer());
+    }
+}
+
+function redrawCanvas() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    setCanvasBackground(bgColor);
+    layers.forEach(layer => {
+        if (layer.visible) {
+            ctx.drawImage(layer.canvas, 0, 0);
+        }
+    });
+}
 
 function setCanvasBackground(color) {
-    canvas.style.backgroundColor = color;
     ctx.fillStyle = color;
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 }
 
 function startDrawing(e) {
     drawing = true;
-    draw(e);
+    drawPoint(e); // Draw a single point when starting
 }
 
 function stopDrawing() {
     drawing = false;
-    ctx.beginPath();
+    layers[currentLayer].context.beginPath(); // Start a new path when stopping
+}
+
+function drawPoint(e) {
+    const layer = layers[currentLayer];
+    layer.context.lineWidth = brushSize;
+    layer.context.lineCap = 'round';
+
+    const rect = canvas.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+
+    if (toolType === 'eraser') {
+        layer.context.globalCompositeOperation = 'destination-out';
+    } else {
+        layer.context.globalCompositeOperation = 'source-over';
+        layer.context.strokeStyle = penColor;
+    }
+
+    layer.context.beginPath();
+    layer.context.moveTo(x, y);
+    layer.context.lineTo(x, y);
+    layer.context.stroke();
+
+    redrawCanvas();
 }
 
 function draw(e) {
     if (!drawing) return;
-    ctx.lineWidth = 5;
-    ctx.lineCap = 'round';
-    ctx.strokeStyle = penColor;
+    const layer = layers[currentLayer];
+    layer.context.lineWidth = brushSize;
+    layer.context.lineCap = 'round';
 
-    ctx.lineTo(e.clientX - canvas.offsetLeft, e.clientY - canvas.offsetTop);
-    ctx.stroke();
-    ctx.beginPath();
-    ctx.moveTo(e.clientX - canvas.offsetLeft, e.clientY - canvas.offsetTop);
+    const rect = canvas.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+
+    if (toolType === 'eraser') {
+        layer.context.globalCompositeOperation = 'destination-out';
+    } else {
+        layer.context.globalCompositeOperation = 'source-over';
+        layer.context.strokeStyle = penColor;
+    }
+
+    layer.context.lineTo(x, y);
+    layer.context.stroke();
+    layer.context.beginPath();
+    layer.context.moveTo(x, y);
+
+    redrawCanvas();
 }
 
 canvas.addEventListener('mousedown', startDrawing);
 canvas.addEventListener('mouseup', stopDrawing);
 canvas.addEventListener('mousemove', draw);
+canvas.addEventListener('mouseout', stopDrawing);
+canvas.addEventListener('click', drawPoint); // Add this line
 
 penColorInput.addEventListener('change', (e) => {
     penColor = e.target.value;
@@ -54,11 +137,31 @@ bgColorInput.addEventListener('change', (e) => {
     setCanvasBackground(bgColor);
 });
 
+brushSizeInput.addEventListener('input', (e) => {
+    brushSize = e.target.value;
+});
+
+toolTypeSelect.addEventListener('change', (e) => {
+    toolType = e.target.value;
+});
+
+layerSelect.addEventListener('change', (e) => {
+    currentLayer = parseInt(e.target.value);
+    layerVisibility.checked = layers[currentLayer].visible;
+});
+
+layerVisibility.addEventListener('change', (e) => {
+    layers[currentLayer].visible = e.target.checked;
+    redrawCanvas();
+});
+
 resetBtn.addEventListener('click', () => {
-    setCanvasBackground(bgColor);
+    layers[currentLayer].context.clearRect(0, 0, canvas.width, canvas.height);
+    redrawCanvas();
 });
 
 saveBtn.addEventListener('click', () => {
+    redrawCanvas(); // Ensure all visible layers are drawn
     canvas.toBlob((blob) => {
         const formData = new FormData();
         formData.append('file', blob, 'drawing.png');
@@ -72,5 +175,7 @@ saveBtn.addEventListener('click', () => {
     });
 });
 
-
-setCanvasBackground(bgColor);
+// Initialize
+initializeLayers();
+resizeCanvas();
+window.addEventListener('resize', resizeCanvas);
