@@ -56,14 +56,16 @@ function initializeLayers() {
     }
 }
 
-function redrawCanvas() {//perpetuates drwing 
+function redrawCanvas() { // perpetuates drawing 
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     setCanvasBackground(bgColor);
-    layers.forEach(layer => {
+    layers.forEach((layer, index) => {
+        ctx.globalAlpha = (index === currentLayer) ? 1 : 0.5; // Set opacity for non-current layers
         if (layer.visible) {
             ctx.drawImage(layer.canvas, 0, 0);
         }
     });
+    ctx.globalAlpha = 1; // Reset global alpha to default
 }
 
 function setCanvasBackground(color) {
